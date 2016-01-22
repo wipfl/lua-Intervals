@@ -62,7 +62,7 @@ function Interval:normalize()
   return self
 end
 
-local function _min(t)
+function Interval._min(t)
   local m
   for _,v in ipairs(t) do
     m = m or v
@@ -73,7 +73,7 @@ local function _min(t)
   return m
 end
 
-local function _max(t)
+function Interval._max(t)
   local m
   for _,v in ipairs(t) do
     m = m or v
@@ -197,8 +197,8 @@ function Interval:__mul(b)
   else
     a.value = a.value * c.value
     local values = {a.low * c.low, a.low * c.high, a.high * c.low, a.high * c.high}
-    a.low = _min(values)
-    a.high = _max(values)
+    a.low = Interval._min(values)
+    a.high = Interval._max(values)
   end
   return a:normalize()
 end
@@ -220,13 +220,13 @@ function Interval:__div(b)
   end
 
   if type(self) == 'number' then
-    a = Interval:new({v=b})
+    a = Interval:new({v=self})
   else
     a = Interval.deep_copy(self)
   end
   
   if b.high * b.low > 0 then
-    return self * Interval:new{l=1/b.high, v=1/b.value, h=1/b.low}
+    return a * Interval:new{l=1/b.high, v=1/b.value, h=1/b.low}
   else
     a.value = a.value / b.value
     a.low = - math.huge
@@ -259,8 +259,8 @@ function Interval:__pow(b)
     local a = Interval.deep_copy(self)
     a.value = a.value ^ b.value
     local v = {a.low ^ b.low, a.low ^ b.high, a.high ^ b.low, a.high ^ b.high}
-    a.low = _min(v)
-    a.high = _max(v)
+    a.low = Interval._min(v)
+    a.high = Interval._max(v)
     return a:normalize()
   end
 end
@@ -482,5 +482,60 @@ end
 function Interval:toJson()
   return self:format('{ "type": "Interval", "value": #v.13g, "low": #v.13g, "high": #v.13g}')
 end
+
+--[[
+function test_div(iv)
+  local a = iv:new({l=9.5,v=10,h=10.3})
+  local b = iv:new({l=-9.5,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
+  
+  local c
+  -- Simple case: both positive
+  c = a/a
+-- assertEquals(c.value, 1)
+-- assertAlmostEquals(c.low,a.low/a.high,1e-12)
+-- assertAlmostEquals(c.high,a.high/a.low,1e-12)
+  
+  -- All values of one operand negative
+  c = a/d
+-- assertEquals(c.value, -1)
+-- assertAlmostEquals(c.low,a.high/d.high,1e-12)
+-- assertAlmostEquals(c.high,a.low/d.low,1e-12)
+    
+  c = d/a
+-- assertEquals(c.value, -1)
+-- assertAlmostEquals(c.low,d.low/a.low,1e-12)
+-- assertAlmostEquals(c.high,d.high/a.high,1e-12)
+ 
+  -- Dividend One limit negative  
+  c = b/a
+-- assertEquals(c.value, 1)
+-- assertEquals(c.low,b.low/a.low)
+-- assertEquals(c.high,b.high/a.low)
+  
+  -- Divisor One limit negative  / now 0 is in the interval
+  -- this gives result interval from minus infinity to plus infinity
+  c = a/b
+-- assertEquals(c.value, 1)
+-- assertEquals(c.low,- math.huge)
+-- assertEquals(c.high, math.huge)
+
+  -- Dividend is a number / Divisor all positive
+  c = 2/b 
+-- assertEquals(c.value, 5)
+-- assertEquals(c.low, - math.huge)
+-- assertEquals(c.high, math.huge)
+  
+
+  -- Dividend is a number / Divisor contains Zero.
+  c = 2/b 
+-- assertEquals(c.value, 5)
+-- assertEquals(c.low, - math.huge)
+-- assertEquals(c.high, math.huge)
+  
+end
+ 
+test_div(Interval)
+--]]
 
 return Interval

@@ -71,182 +71,289 @@ function TestIntervals:test_initialize()
   
 end
 
---[[
-function TestIntervals:test_add()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 12, 'mm')
+function TestIntervals:test_min_max()
+  -- Check _min
+  assertEquals(iv._min{1,2,3,4,5}, 1)
+  assertEquals(iv._min{-1,2,-3,4,-5}, -5)
+  assertEquals(iv._min{-1,math.huge}, -1)
+  assertEquals(iv._min{-1,-math.huge}, -math.huge)
+  assertEquals(iv._min{-5}, -5)
+
+  -- Check _max
+  assertEquals(iv._max{1,2,3,4,5}, 5)
+  assertEquals(iv._max{-1,2,-3,4,-5}, 4)
+  assertEquals(iv._max{-1,math.huge}, math.huge)
+  assertEquals(iv._max{-1,-math.huge}, -1)
+  assertEquals(iv._max{-5}, -5)
+end
+
+function TestIntervals:test_normalize()
+  local a = iv:new({l=9.5,v=10,h=10.3})
+  assertEquals(a.low <= a.value, true )
+  assertEquals(a.value <= a.high, true )
   
-  -- We define a local function / Otherwise the formulas that 
-  -- we want to test for assertion are evaluated before assertError
-  -- is invoked.
-  local function add(a,b) return a+b; end
+  -- Standard
+  a:normalize()
+  assertEquals(a.low <= a.value, true )
+  assertEquals(a.value <= a.high, true )
+  
+  -- low, value, high are equal
+  a.low = a.value
+  a.high = a.value
+  a:normalize()
+  assertEquals(a.low <= a.value, true )
+  assertEquals(a.value <= a.high, true )
+  
+  -- value is lower than low
+  a.value = a.low - 1
+  a:normalize()
+  assertEquals(a.low <= a.value, true )
+  assertEquals(a.value <= a.high, true )
+  assertEquals(a.low == a.value, true)
+  
+  -- value is higher than high
+  a.value = a.high + 1
+  a:normalize()
+  assertEquals(a.low <= a.value, true )
+  assertEquals(a.value <= a.high, true )
+  assertEquals(a.high == a.value, true)
+
+  -- high and low are changed
+  a.low = 11
+  a.high = 10
+  a.value = 9.5  
+  a:normalize()
+  assertEquals(a.low <= a.value, true )
+  assertEquals(a.value <= a.high, true )
+  assertEquals( a.value == 9.5, true)
+
+end
+
+function TestIntervals:test_add()
+  local a = iv:new({l=9.5,v=10,h=10.3})
+  local b = iv:new({h=-9.5,v=-10,l=-10.8})
+  
   
   local ok, res, c
   
   c = a+b
-  assertEquals(c.value, 100.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.symbol,'m')
+  assertEquals(c.value,  0)
+  assertAlmostEquals(c.low,   -1.3, 1e-12)
+  assertAlmostEquals(c.high,   0.8, 1e-12)
 
   c = b+a
-  assertEquals(c.value, 100.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.symbol,'mm')
-  
-  -- This is not allowed / we must do some voodoo to catch the assertion (see above)
-  ok, res = pcall(add,b*b,a)
-  assertFalse(ok)
-  assertStrContains(res, 'Unmatching unit in add/sub')
-  ok,res = pcall(add, 1, a)
-  assertFalse(ok)
-  assertStrContains(res, 'Adding/subtracting is allowed with PhysValue only')
-  ok,res = pcall(add, a, 5)
-  assertFalse(ok)
-  assertStrContains(res, 'Adding/subtracting is allowed with PhysValue only')
+  assertEquals(c.value,  0)
+  assertAlmostEquals(c.low,   -1.3, 1e-12)
+  assertAlmostEquals(c.high,   0.8, 1e-12)
+
+  -- Single Point Interval
+  a = iv:new({l=10,v=10,h=10})
+  b = iv:new({h=1,v=1,l=1})
+
+  c = a+b
+  assertEquals(c.value, 11)
+  assertEquals(c.low,   11)
+  assertEquals(c.high,  11)
+
+  c = b+a
+  assertEquals(c.value, 11)
+  assertEquals(c.low,   11)
+  assertEquals(c.high,  11)
+
 end
 
-
 function TestIntervals:test_sub()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 12, 'mm')
+  local a = iv:new({l=9.5,v=10,h=10.3})
+  local b = iv:new({h=-9.5,v=-10,l=-10.8})
   
-  -- We define a local function / Otherwise the formulas that 
-  -- we want to test for assertion are evaluated before assertError
-  -- is invoked.
-  local function sub(a,b) return a+b; end
   
   local ok, res, c
   
   c = a-b
-  assertEquals(c.value, 100-0.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.symbol,'m')
+  assertEquals(c.value,       a.value - b.value)
+  assertAlmostEquals(c.low,   a.low - b.high, 1e-12)
+  assertAlmostEquals(c.high,  a.high - b.low, 1e-12)
 
   c = b-a
-  assertEquals(c.value, 0.012-100)
-  assertEquals(c.units.m,1)
-  assertEquals(c.symbol,'mm')
+  assertEquals(c.value,       b.value - a.value)
+  assertAlmostEquals(c.low,   b.low - a.high, 1e-12)
+  assertAlmostEquals(c.high,  b.high - a.low, 1e-12)
+
+  -- Single Point Interval
+  a = iv:new({l=10,v=10,h=10})
+  b = iv:new({h=1,v=1,l=1})
+
+  c = a-b
+  assertEquals(c.value, 9)
+  assertEquals(c.low,   9)
+  assertEquals(c.high,  9)
+
+  c = b-a
+  assertEquals(c.value, -9)
+  assertEquals(c.low,   -9)
+  assertEquals(c.high,  -9)
   
-  -- This is not allowed / we must do some voodoo to catch the assertion (see above)
-  ok, res = pcall(sub,b*b,a)
-  assertFalse(ok)
-  assertStrContains(res, 'Unmatching unit in add/sub')
-  ok, res = pcall(sub, 1, a)
-  assertFalse(ok)
-  assertStrContains(res, 'Adding/subtracting is allowed with PhysValue only')
-  ok, res = pcall(sub, a, 5)
-  assertFalse(ok)
-  assertStrContains(res, 'Adding/subtracting is allowed with PhysValue only')
+  -- First Operand is number
+  local d = 12
+  a = iv:new({l=9.5,v=10,h=10.3})
+  b = iv:new({h=-9.5,v=-10,l=-10.8})
+  
+  c = d - a
+  assertEquals(c.value,  2)
+  assertAlmostEquals(c.low,   d- a.high, 1e-12)
+  assertAlmostEquals(c.high,  d- a.low, 1e-12)
+  
+  c = d - b
+  assertEquals(c.value,  22)
+  assertAlmostEquals(c.low,   d - b.high, 1e-12)
+  assertAlmostEquals(c.high,  d - b.low, 1e-12)
+  
+  -- Second Operand is number
+  local d = 12
+  a = iv:new({l=9.5,v=10,h=10.3})
+  b = iv:new({h=-9.5,v=-10,l=-10.8})
+  
+  c = a - d
+  assertEquals(c.value,  -2)
+  assertAlmostEquals(c.low,   a.low - d, 1e-12)
+  assertAlmostEquals(c.high,  a.high -d, 1e-12)
+  
+  c = b - d
+  assertEquals(c.value,  -22)
+  assertAlmostEquals(c.low,   b.low - d, 1e-12)
+  assertAlmostEquals(c.high,  b.high -d, 1e-12)
+  
+  
 end
-  
+
+
 function TestIntervals:test_unm()
-  local a = iv:new('a', 100, 'm')
-  
- 
+  local a = iv:new({l=9.5,v=10,h=10.3})
   local c
   
   c = -a
-  assertEquals(c.value, -100)
-  assertEquals(c.units.m,1)
-  assertEquals(c.symbol,'m')
+  assertEquals(c.value, -a.value)
+  assertEquals(c.low,   -a.high)
+  assertEquals(c.high,  -a.low)
 
   c = - -a
-  assertEquals(c.value, 100)
-  assertEquals(c.units.m,1)
-  assertEquals(c.symbol,'m')
+  assertEquals(c.value, a.value)
+  assertEquals(c.low,   a.low)
+  assertEquals(c.high,  a.high)
   
 end
- 
+
+
 function TestIntervals:test_mul()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 12, 'ms')
-  local s = iv:new('s', 12, 'm/s')
+  local a = iv:new({l=9.5,v=10,h=10.3})
+  local b = iv:new({l=-9.5,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
   
   local c
-  
+  -- Simple case: both positive
+  c = a*a
+  assertEquals(c.value, 100)
+  assertEquals(c.low,a.low*a.low)
+  assertEquals(c.high,a.high*a.high)
+
+  -- One limit negative  
   c = a*b
-  assertEquals(c.value, 100*0.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,1)
-  assertEquals(c.symbol,nil)
+  assertEquals(c.value, 100)
+  assertEquals(c.low,a.high*b.low)
+  assertEquals(c.high,a.high*b.high)
   
-
   c = b*a
-  assertEquals(c.value, 0.012*100)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,1)
-  assertEquals(c.symbol,nil)
-  
-  -- Multiplying with number keeps the symbol
-  c = 0.012*a
-  assertEquals(c.value, 100*0.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,nil)
-  assertEquals(c.symbol,'m')
+  assertEquals(c.value, 100)
+  assertEquals(c.low,a.high*b.low)
+  assertEquals(c.high,a.high*b.high)
 
-  c = a*0.012
-  assertEquals(c.value, 100*0.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,nil)
-  assertEquals(c.symbol,'m')
+  -- All values of one operand negative
+  c = a*d
+  assertEquals(c.value, -100)
+  assertEquals(c.low,a.high*d.low)
+  assertEquals(c.high,a.low*d.high)
+    
+  c = d*a
+  assertEquals(c.value, -100)
+  assertEquals(c.low,a.high*d.low)
+  assertEquals(c.high,a.low*d.high)
+ 
+  -- All values of both operands negative
+  c = d*d
+  assertEquals(c.value, 100)
+  assertEquals(c.low,d.high*d.high)
+  assertEquals(c.high,d.low*d.low)
   
-  -- Multiplying speed [m/s] with time [s] should remove the member units.s 
-  c = s * b
-  assertEquals(c.value, 12*0.012)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,nil)
-  assertEquals(c.symbol,nil)
+  -- Multiply with number
+  c = 2*b
+  assertEquals(c.value, 20)
+  assertEquals(c.low,2*b.low)
+  assertEquals(c.high,2*b.high)
+  
+  c = b*2
+  assertEquals(c.value, 20)
+  assertEquals(c.low,2*b.low)
+  assertEquals(c.high,2*b.high)
+  
+  c= -2*b
+  assertEquals(c.value, -20)
+  assertEquals(c.low,-2*b.high)
+  assertEquals(c.high,-2*b.low)
+    
 end
   
 function TestIntervals:test_div()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 12, 'ms')
-  local s = iv:new('s', 12, 'm/s')
+  local a = iv:new({l=9.5,v=10,h=10.3})
+  local b = iv:new({l=-9.5,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
   
   local c
+  -- Simple case: both positive
+  c = a/a
+  assertEquals(c.value, 1)
+  assertAlmostEquals(c.low,a.low/a.high,1e-12)
+  assertAlmostEquals(c.high,a.high/a.low,1e-12)
   
-  c = a/b
-  assertAlmostEquals(c.value, 100/0.012, 1e-12)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,-1)
-  assertEquals(c.symbol,nil)
-  
-
-  c = b/a
-  assertEquals(c.value, 0.012/100)
-  assertEquals(c.units.m,-1)
-  assertEquals(c.units.s,1)
-  assertEquals(c.symbol,nil)
-  
-  -- Dividing by number keeps the symbol
-  c = a / 0.012
-  assertAlmostEquals(c.value, 100/0.012, 1e-12)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,nil)
-  assertEquals(c.symbol,'m')
-
-  c = 0.012 / a
-  assertEquals(c.value, 0.012/100)
-  assertEquals(c.units.m,-1)
-  assertEquals(c.units.s,nil)
-  assertEquals(c.symbol,nil)
-  
-  -- Dividing speed [m/s] by length [m] should remove the member units.m 
-  c = s / a
-  assertEquals(c.value, 12/100)
-  assertEquals(c.units.m,nil)
-  assertEquals(c.units.s,-1)
-  assertEquals(c.symbol,nil)
-  
-  -- Dividing by zero return math.huge
-  c = a / 0
-  assertEquals(c.value, math.huge)
-  assertEquals(c.units.m,1)
-  assertEquals(c.units.s,nil)
-  assertEquals(c.symbol,'m')
+  -- All values of one operand negative
+  c = a/d
+  assertEquals(c.value, -1)
+  assertAlmostEquals(c.low,a.high/d.high,1e-12)
+  assertAlmostEquals(c.high,a.low/d.low,1e-12)
+    
+  c = d/a
+  assertEquals(c.value, -1)
+  assertAlmostEquals(c.low,d.low/a.low,1e-12)
+  assertAlmostEquals(c.high,d.high/a.high,1e-12)
  
+  -- Dividend One limit negative  
+  c = b/a
+  assertEquals(c.value, 1)
+  assertEquals(c.low,b.low/a.low)
+  assertEquals(c.high,b.high/a.low)
+  
+  -- Divisor One limit negative  / now 0 is in the interval
+  -- this gives result interval from minus infinity to plus infinity
+  c = a/b
+  assertEquals(c.value, 1)
+  assertEquals(c.low,- math.huge)
+  assertEquals(c.high, math.huge)
+
+  -- Dividend is a number / Divisor all positive
+  c = 2/a 
+  assertEquals(c.value, 2/a.value)
+  assertEquals(c.low, 2 / a.high)
+  assertEquals(c.high, 2 / a.low)
+  
+
+  -- Dividend is a number / Divisor contains Zero.
+  c = 2/b 
+  assertEquals(c.value, 2/a.value)
+  assertEquals(c.low, - math.huge)
+  assertEquals(c.high, math.huge)
+  
 end
   
+--[[ 
 function TestIntervals:test_sqrt()
   local a = iv:new('a', -100, 'm')
   local b = iv:new('b', 12, 'ms')
@@ -398,108 +505,6 @@ function TestIntervals:test_le()
   
 end
 
-function TestIntervals:test_getBaseUnitString()
-  local s = iv.u['N']:_getBaseUnitString()
-  -- The resulting string does not guarantee the sequence of
-  -- base units. So we have to check for any possible sequence.
-  assertStrContains(s,"kg")
-  assertStrContains(s,"m")
-  assertStrContains(s,"s^-2")
-  
-  s=s:gsub('kg','',1)
-  s=s:gsub('m','',1)
-  s=s:gsub('s%^%-2','',1)
-  
-  assertStrMatches(s,'**')
-end
-
-function TestIntervals:test_getUnitFactor()
-  assertEquals(iv.u['mm']:_getUnitFactor('mm'), 0.001)
-  assertEquals(iv.u['mm']:_getUnitFactor(), 0.001)
-  local a = iv.u['m'] / iv.u['s']
-  assertEquals(a:_getUnitFactor('km/h'), 1/3.6)
-  
-  local function getUnitFactor(p,unit) return p:_getUnitFactor(unit); end
-  
-  local ok, res
-  
-  ok, res = pcall(getUnitFactor, a, 1)
-  assertFalse(ok)
-  assertStrContains(res,'No string unit: ')
-  
-  ok,res = pcall(getUnitFactor, a, nil)
-  assertFalse(ok)
-  assertStrContains(res,'No unit given.')
-  
-  ok,res = pcall(getUnitFactor, a, 'm/s^2')
-  assertFalse(ok)
-  assertStrContains(res,'Unmatching units in unit conversion: ')
-end
-
-function TestIntervals:test_getValue()
-  assertEquals(iv.u['mm']:getValue('km'), 1e-6)
-  local a = iv.u['m'] / iv.u['s']
-  assertAlmostEquals(a:getValue('km/h'), 3.6, 1e-12)
-  
-  local function getValue(p,unit) return p:getValue(unit); end
-  
-  local ok, res
-  
-  ok, res = pcall(getValue, a, 1)
-  assertFalse(ok)
-  assertStrContains(res,'No string unit: ')
-  
-  ok,res = pcall(getValue, a, nil)
-  assertFalse(ok)
-  assertStrContains(res,'No unit given.')
-  
-  ok,res = pcall(getValue, a, 'm/s^2')
-  assertFalse(ok)
-  assertStrContains(res,'Unmatching units in unit conversion: ')
-end
-
-function TestIntervals:test_setPrefUnit()
-  local a = iv.u['km'] / iv.u['h']
-  a:setPrefUnit('m/s')
-  assertEquals(a.symbol,'m/s')
-  local function setPrefUnit(p,unit) return p:setPrefUnit(unit); end
-  
-  local ok, res
-  
-  ok, res = pcall(setPrefUnit, a, 1)
-  assertFalse(ok)
-  assertStrContains(res,'No string unit: ')
-  
-  ok,res = pcall(setPrefUnit, a, nil)
-  assertFalse(ok)
-  assertStrContains(res,'No unit given.')
-  
-  ok,res = pcall(setPrefUnit, a, 'm/s^2')
-  assertFalse(ok)
-  assertStrContains(res,'Unmatching units in unit conversion: ')
-  
-  
-end
-
-function TestIntervals:test_concat()
-  local a = iv.u['m'] / iv.u['s']
-  a:setPrefUnit('m/s')
-  assertStrMatches((2*a)..'km/h','7.2 km/h')
-  assertStrMatches('Speed: '..a, 'Speed: 1 m/s')
-  
-  local function concat(p,unit) return p..unit; end
-  
-  local ok, res
-  
-  ok, res = pcall(concat, a, 1)
-  assertFalse(ok)
-  assertStrContains(res,'No string unit: ')
-  
-  ok,res = pcall(concat, a, 'm/s^2')
-  assertFalse(ok)
-  assertStrContains(res,'Unmatching units in unit conversion: ')
-
-end
 
 function TestIntervals:test_tostring()
   local a = iv.u['m'] / iv.u['s']
@@ -530,11 +535,6 @@ function TestIntervals:test_toJson()
   
 end
 
-function TestIntervals:test_setId()
-  local vMax = iv:new('vMax', 4, 'm/s')
-  assertEquals(vMax:format('#is #vg #us', nil), 'vMax 4 m/s')
-  assertEquals(vMax:setId('vMin'):format('#is #vg #us', nil), 'vMin 4 m/s')
-end
 --]]
 lu = LuaUnit.new()
 lu:setOutputType("tap")
