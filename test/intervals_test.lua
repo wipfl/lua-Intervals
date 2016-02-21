@@ -61,7 +61,13 @@ function TestIntervals:test_initialize()
   assertEquals(b.value, 10)
   assertEquals(b.low,9)
   assertEquals(b.high,10)
-
+  
+  -- Initialize with an interval
+  b = iv:new(a)
+  assertEquals(b.value, a.value)
+  assertEquals(b.low, a.low)
+  assertEquals(b.high, a.high)
+  
   -- Test for assertion with wrong type
   local function new(b) return iv:new(b); end
   
@@ -353,102 +359,169 @@ function TestIntervals:test_div()
   
 end
   
---[[ 
+
 function TestIntervals:test_sqrt()
-  local a = iv:new('a', -100, 'm')
-  local b = iv:new('b', 12, 'ms')
-  local s = iv:new('s', 144, 'm/s')
+  local a = iv:new({l=9,v=16,h=25})
+  local b = iv:new({l=-9.5,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
   
   
   local c
   
-  c = s:sqrt()
-  assertEquals(c.value, 12)
-  assertEquals(c.units.m,0.5)
-  assertEquals(c.units.s,-0.5)
-  assertEquals(c.symbol,nil)
+  c = a:sqrt()
+  assertEquals(c.value, 4)
+  assertEquals(c.low,3)
+  assertEquals(c.high,5)
  
  
-  c = b*b
+  c = a*a
   c = c:sqrt()
-  assertEquals(b==c, true)
+  assertEquals(a==c, true)
   
   local function _sqrt(v) return v:sqrt(); end
   
   
   local ok, res
   -- Square root of negative number is not supported.
-  ok, res = pcall(_sqrt, a)
+  ok, res = pcall(_sqrt, b)
   assertFalse(ok)
-  assertStrContains(res,'sqrt of negative values not supported.')
+  assertStrContains(res,'All base members must be positive')
+  
+  local ok, res
+  -- Square root of negative number is not supported.
+  ok, res = pcall(_sqrt, d)
+  assertFalse(ok)
+  assertStrContains(res,'All base members must be positive')
   
 end
 
 function TestIntervals:test_cbrt()
-  local a = iv:new('a', -100, 'm')
-  local b = iv:new('b', 12, 'ms')
-  local s = iv:new('s', 12*12*12, 'm/s')
+  local a = iv:new({l=27, v=64, h=125})
+  local b = iv:new({l=-0.01,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
   
   
   local c
   
-  c = s:cbrt()
-  assertAlmostEquals(c.value, 12, 1e-12)
-  assertEquals(c.units.m,1/3)
-  assertEquals(c.units.s,-1/3)
-  assertEquals(c.symbol,nil)
+  c = a:cbrt()
+  assertAlmostEquals(c.value, 4, 1e-12)
+  assertAlmostEquals(c.low, 3,1e-12)
+  assertAlmostEquals(c.high, 5,1e-12)
+  
  
-  c = b*b*b
-  c = c:cbrt()
-  --assertEquals(b==c, true)
-  -- b and c is not exactly equal (floating point rounding)
-  -- We test if it is nearly equal
+  c = a*a*a
+  c = iv.cbrt(c)
+  assertAlmostEquals(c.value, a.value, 1e-12)
+  assertAlmostEquals(c.low, a.low,1e-12)
+  assertAlmostEquals(c.high, a.high,1e-12)
   
-  assertAlmostEquals(c.value, b.value, 1e-12)
-  assertAlmostEquals(c.units.s, b.units.s, 1e-12)
+  local function _cbrt(v) return v:cbrt(); end
   
-
-  local function _cbrt(a) return a:cbrt(); end
   
   local ok, res
-  -- Square root of negative number is not supported.
-  ok, res = pcall(_cbrt, a)
+  -- Cubique root of negative number is not supported.
+  ok, res = pcall(_cbrt, b)
   assertFalse(ok)
-  assertStrContains(res,'cbrt of negative values not supported.')
+  assertStrContains(res,'All base members must be positive')
+  
+  local ok, res
+  -- Cubique root of negative number is not supported.
+  ok, res = pcall(_cbrt, d)
+  assertFalse(ok)
+  assertStrContains(res,'All base members must be positive')
   
 end
 
-
 function TestIntervals:test_pow()
-  local d = iv:new('d', 0, 'N')
-  local s = iv:new('s', 12, 'm/s')
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv:new({l=-0.01,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
+  local z = iv:new(0)
+
+  local function _pow(b,e) return b^e; end
   
   local c
-  
-  c = s^2
-  assertEquals(c.value, 12*12)
-  assertEquals(c.units.m,2)
-  assertEquals(c.units.s,-2)
-  assertEquals(c.symbol,nil)
+  -- Interval powered by number
+  c = a^2
+  assertEquals(c.value, a.value*a.value)
+  assertEquals(c.low,a.low*a.low)
+  assertEquals(c.high,a.high*a.high)
   
 
-  c = s^-2
-  assertEquals(c.value, 1/(12*12))
-  assertEquals(c.units.m,-2)
-  assertEquals(c.units.s,2)
-  assertEquals(c.symbol,nil)
+  c = a^-2
+  assertEquals(c.value, 1/(a.value*a.value))
+  assertEquals(c.high, 1/(a.low*a.low))
+  assertEquals(c.low, 1/(a.high*a.high))
+
+  local ok, res
+  -- power of null is not supported.
+  ok, res = pcall(_pow, z, 2)
+  assertFalse(ok)
+  assertStrContains(res,'All base members must be positive')
+  -- power of non-positives is not supported
+  ok, res = pcall(_pow, d, 2)
+  assertFalse(ok)
+  assertStrContains(res,'All base members must be positive')
   
-  c = d^-1
-  assertEquals(c.value, math.huge)
-  assertEquals(c.units.m,-1)
-  assertEquals(c.units.kg, -1)
-  assertEquals(c.units.s,2)
-  assertEquals(c.symbol,nil)
+  -- Number powered by interval  
+  c = 2^a
+  assertEquals(c.value, 2 ^ a.value)
+  assertEquals(c.low, 2 ^ a.low)
+  assertEquals(c.high, 2 ^ a.high)
+  
+
+  c = 2^-a
+  assertEquals(c.value, 1/(2 ^ a.value))
+  assertEquals(c.high, 1/(2 ^ a.low))
+  assertEquals(c.low, 1/(2 ^ a.high))
+
+  -- 1 powered by x is always 1
+  c = 1 ^ b
+  assertEquals(c.value, 1)
+  assertEquals(c.high, 1)
+  assertEquals(c.low, 1)
+  
+  -- power of zero is not supported
+  ok, res = pcall(_pow, 0, a)
+  assertFalse(ok)
+  assertStrContains(res,'Base must be positive')
+  
+  -- power of negatives is not supported
+  ok, res = pcall(_pow, -0.00001, a)
+  assertFalse(ok)
+  assertStrContains(res,'Base must be positive')
+  
+  -- Interval powered by interval
+  c = a ^ b
+  assertEquals(c.value, a.value ^ b.value)
+  assertEquals(c.low, a.high ^ b.low) -- ATTENTION 4^-0.01 is less then 2^-0.01 !!
+  assertEquals(c.high, a.high ^ b.high)
+  
+end
+ 
+function TestIntervals:test_log()
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv.log(a)
+  
+  assertEquals(b.value, math.log(a.value))
+  assertEquals(b.low, math.log(a.low))
+  assertEquals(b.high, math.log(a.high))
+end
+  
+function TestIntervals:test_log10()
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv.log10(a)
+  
+  assertEquals(b.value, math.log10(a.value))
+  assertEquals(b.low, math.log10(a.low))
+  assertEquals(b.high, math.log10(a.high))
 end
   
 function TestIntervals:test_eq()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 100, 's')
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv:new({l=-0.01,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
+  local z = iv:new(0)
   
   local c = a
   assertEquals(a==a, true)
@@ -461,81 +534,146 @@ function TestIntervals:test_eq()
 end
 
 function TestIntervals:test_lt()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 100, 's')
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv:new({l=-0.01,v=10,h=10.3})
+  local d = iv:new{l=-11, v=-10, h =-9}
+  local e = iv:new{l=1, v=1.5, h=2-1e-12}
+  local z = iv:new(0)
   
   local c = a
   assertEquals(a<a, false)
   assertEquals(a>a, false)
   assertEquals(c<a, false)
   assertEquals(c>a, false)
-  assertEquals(c<(1+1e-12)*a, true)
-  assertEquals(c>(1+1e-12)*a, false)
-  assertEquals((1+1e-12)*a>c, true)
-  assertEquals((1+1e-12)*a<c, false)
+
+  assertEquals(e<a, true)
+  assertEquals(a>e, true)
+  assertEquals(e>a, false)
+  assertEquals(a<e, false)
   
-  function _lt(a,b) return a < b; end
-  
-  local ok, res
-  ok, res = pcall(_lt,a,b)
-  assertFalse(ok)
-  assertStrContains(res, "Unmatching unit in compare <:")
 end
 
 function TestIntervals:test_le()
-  local a = iv:new('a', 100, 'm')
-  local b = iv:new('b', 100, 's')
-  
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv:new{l=2-1e-12, v=3, h=4}
+  local d = iv:new{l=2+1e-12, v=3, h=4-1e-12}
   local c = a
   assertEquals(a<=a, true)
   assertEquals(a>=a, true)
   assertEquals(c<=a, true)
   assertEquals(c>=a, true)
-  assertEquals(c<=(1+1e-12)*a, true)
-  assertEquals(c>=(1+1e-12)*a, false)
-  assertEquals((1+1e-12)*a>=c, true)
-  assertEquals((1+1e-12)*a<=c, false)
   
-  function _le(a,b) return a <= b; end
+  assertEquals(b<=a, true)
+  assertEquals(a>=b, true)
+  assertEquals(a<=b, false)
+  assertEquals(b>=a, false)
+
+  -- d is included in a / both directions false
+  assertEquals(d<=a, false)
+  assertEquals(a<=d, false)
+  assertEquals(d>=a, false)
+  assertEquals(a>=d, false)
+    
+end
+
+function TestIntervals:test_includes()
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv:new{l=2-1e-12, v=3, h=4}
+  local d = iv:new{l=2+1e-12, v=3, h=4-1e-12}
+  local c = a
+  -- inclusion of intervals
+  assertEquals(a:includes(a), true)
+  assertEquals(a:includes(c), true)
+  assertEquals(c:includes(a), true)
+  assertEquals(c:includes(c), true)
   
-  local ok, res
-  ok, res = pcall(_le,a,b)
-  assertFalse(ok)
-  assertStrContains(res, "Unmatching unit in compare <=:")
+  assertEquals(b:includes(a), true)
+  assertEquals(a:includes(b), false)
+  assertEquals(d:includes(a), false)
+  assertEquals(a:includes(d), true)
+
+  -- inclusion of numbers
+  assertEquals(a:includes(2), true)
+  assertEquals(a:includes(4), true)
+  assertEquals(a:includes(2-1e-12), false)
+  assertEquals(a:includes(4+1e-12), false)
+    
+end
+
+function TestIntervals:test_compare()
+  local a = iv:new({l=2, v=3, h=4})
+  local b = iv:new{l=2-1e-12, v=3, h=4}
+  local c = iv:new{l=2+1e-12, v=3, h=4-1e-12}
+
+  -- inclusion of intervals
+  local i,v
+  i,v = a:compare(a)
+  assertEquals({i,v}, {'==','=='})
+  i,v = a:compare(b)
+  assertEquals({i,v}, {'b[a]','=='})
+  i,v = a:compare(c)
+  assertEquals({i,v}, {'a[b]', '=='})
   
+  -- Check different values
+  i,v = a:compare(iv:new{l=2,v=3+1e-12,h=4})
+  assertEquals({i,v}, {'==', '<'})
+  i,v = a:compare(iv:new{l=2,v=3-1e-12,h=4})
+  assertEquals({i,v}, {'==', '>'})
+  
+  -- Check interval for '>' and '>='
+  i,v = a:compare(iv:new{l=0, v=1, h=2})
+  assertEquals({i,v}, {'>=', '>'})
+  i,v = a:compare(iv:new{l=0, v=1, h=2-1e-12})
+  assertEquals({i,v}, {'>', '>'})
+
+  -- Check interval for '<' and '<='
+  i,v = a:compare(iv:new{l=4, v=5, h=6})
+  assertEquals({i,v}, {'<=', '<'})
+  i,v = a:compare(iv:new{l=4+1e-12, v=5, h=6})
+  assertEquals({i,v}, {'<', '<'})
+  
+  -- Check with Numbers
+  -- Check different values
+  i,v = a:compare(2)
+  assertEquals({i,v}, {'a[b]', '>'})
+  i,v = a:compare(3)
+  assertEquals({i,v}, {'a[b]', '=='})
+  i,v = a:compare(4)
+  assertEquals({i,v}, {'a[b]', '<'})
+  
+  -- Check value for '>' 
+  i,v = a:compare(2-1e-12)
+  assertEquals({i,v}, {'>', '>'})
+
+  -- Check value for '<'
+  i,v = a:compare(4+1e-12)
+  assertEquals({i,v}, {'<', '<'})
+
 end
 
 
 function TestIntervals:test_tostring()
-  local a = iv.u['m'] / iv.u['s']
-  a:setPrefUnit('m/s')
-  assertStrMatches(tostring(a), '1 m/s')
+  local a = iv:new{v=10.1, d=0.5}
+  local str = tostring(a):gsub(',','.') -- (adapt for all i18n modes)
+  assertEquals(str, '10.1 [9.6; 10.6]')
 end
 
+
 function TestIntervals:test_format()
-  local vMax = iv:new('vMax', 4, 'm/s')
-  assertEquals(vMax:format(), '4 m/s')
-  assertEquals(vMax:format(nil, 'km/h'), '14.4 km/h')
-  assertEquals(vMax:format('#is #vg #us', nil), 'vMax 4 m/s')
-  assertEquals(vMax:format('#is #vg #us', 'km/h'), 'vMax 14.4 km/h')
-  assertEquals(vMax:format('#is #vg #us', 'km/h'), 'vMax 14.4 km/h')
-  vMax = iv:new('vMax', -1/3, 'm/s')
-  assertEquals(vMax:format('#is #v12.9f #us', nil), 'vMax -0.333333333 m/s')
-  assertAlmostEquals(tonumber(vMax:format('#v.13g', nil)), vMax.value, 1e-12)
-  assertAlmostEquals(tonumber(iv.c.mProton:format('#v.13g', nil)), iv.c.mProton.value, 1e-12)
+  local a = iv:new{v=10.1, d=0.5}
+  assertEquals(a:format():gsub(',','.'), '10.1 [9.6; 10.6]')
+  assertEquals(a:format('x=#mg; #lg <= x <= #hg'):gsub(',','.'), 'x=10.1; 9.6 <= x <= 10.6')
+  local b = a/3
+  assertEquals(b:format('x=#m4.2f; #l4.2f <= x <= #h4.2f'):gsub(',','.'), 'x=3.37; 3.20 <= x <= 3.53')
+  assertAlmostEquals(tonumber(b:format('#m.13g', nil)), b.value, 1e-12)
 end
 
 function TestIntervals:test_toJson()
-  local vMax = iv:new('vMax', 4, 'm/s')
-  assertEquals(vMax:toJson(), '{ "type": "PhysValue", "id": "vMax", "value": 4, "unit": "m/s"}')
-  assertEquals(vMax:toJson('km/h'), '{ "type": "PhysValue", "id": "vMax", "value": 14.4, "unit": "km/h"}')
-  vMax = iv:new('vMax', -1/3, 'm/s')
-  assertEquals(vMax:toJson('m/s'), '{ "type": "PhysValue", "id": "vMax", "value": -0.3333333333333, "unit": "m/s"}')
-  assertEquals(iv.c.mProton:toJson(), '{ "type": "PhysValue", "id": "mProton", "value": 1.67492e-27, "unit": "kg"}')
-  
+  local a = iv:new{v=10.1, d=0.5}
+  assertEquals(a:toJson(), '{ "type": "Interval", "value": 10.1, "low": 9.6, "high": 10.6}')
 end
 
---]]
+
 lu = LuaUnit.new()
 lu:setOutputType("tap")
 os.exit( lu:runSuite() )

@@ -12,12 +12,16 @@ local Interval = class('Interval')
 
 -------------------------------------
 -- Constructor: called in Interval.new().
--- @param value  table defining the interval
+-- @param value  table defining the interval or a number
 -- @field value.v number of the value
 -- @field value.l lower bound of interval
 -- @field value.h upper bount of interval
 -- @field value.d delta range around v (overwrites value.l and value.h)
--- 
+-- @usage iv = Interval:new(10) -- low = high = value = 10
+-- iv = Interval:new({v=10}) -- low = high = value = 10
+-- iv = Interval:new(iv2) -- initialize with the interval iv2
+-- iv = Interval:new({l=9,v=10,h=11}) -- low=9, value=10, high=11
+-- iv = Interval:new({v=10,d=0.5}) -- low=9.5, value=10, high=10.5
 function Interval:initialize(value)
   if type(value) == 'number' then
     self.value = value
@@ -25,13 +29,13 @@ function Interval:initialize(value)
     self.high = value
   else
     assert(type(value) == 'table', 'Initializer must be a table or a number')
-    self.value = value.v or 0
+    self.value = value.v or value.value or 0
     if value.d then
       self.low = self.value - value.d
       self.high = self.value + value.d
     else
-      self.low = value.l or self.value
-      self.high = value.h or self.value
+      self.low = value.l or value.low or self.value
+      self.high = value.h or value.high or self.value
     end
     
     self:normalize()
@@ -243,25 +247,25 @@ end
 -- iv1 = 2 ^ iv2
 -- iv1 = iv2 ^ iv3
 function Interval:__pow(b)
-  if self == 0 then return self end
-  
-  assert(self>0, "Base must be positive: " .. tostring(self))
-
   if type(self) == 'number' then
+    assert(self > 0, "Base must be positive: " .. tostring(self))
     return Interval:new{l=self^b.low, v=self^b.value, h=self^b.high}
-  elseif type(b) == 'number' then
-    local a = Interval.deep_copy(self)
-    a.low = a.low ^ b
-    a.value = a.value ^ b
-    a.high = a.high ^ b
-    return a:normalize()
   else
-    local a = Interval.deep_copy(self)
-    a.value = a.value ^ b.value
-    local v = {a.low ^ b.low, a.low ^ b.high, a.high ^ b.low, a.high ^ b.high}
-    a.low = Interval._min(v)
-    a.high = Interval._max(v)
-    return a:normalize()
+    assert(self.low > 0, "All base members must be positive: " .. tostring(self))
+    if type(b) == 'number' then
+      local a = Interval.deep_copy(self)
+      a.low = a.low ^ b
+      a.value = a.value ^ b
+      a.high = a.high ^ b
+      return a:normalize()
+    else
+      local a = Interval.deep_copy(self)
+      a.value = a.value ^ b.value
+      local v = {a.low ^ b.low, a.low ^ b.high, a.high ^ b.low, a.high ^ b.high}
+      a.low = Interval._min(v)
+      a.high = Interval._max(v)
+      return a:normalize()
+    end
   end
 end
 
@@ -270,6 +274,7 @@ end
 -- @return #Interval self ^ (1/2) 
 -- @usage iv1 = iv2:sqrt()
 function Interval:sqrt()
+  if self == Interval:new(0) then return self end
   return self ^ 0.5
 end
 
@@ -278,6 +283,7 @@ end
 -- @return #Interval self ^ (1/3) 
 -- @usage iv1 = iv2:cbrt()
 function Interval:cbrt()
+  if self == Interval:new(0) then return self end
   return self ^ (1/3)
 end
 
@@ -303,18 +309,12 @@ end
 
 -------------------------------------
 -- Compare Equal self '==' b.
--- Intervals are equal if low, high and value value of both operands match.
+-- Intervals are equal if low, high and value of both operands match.
 -- @param b #Interval to be compared
 -- @return true if self == b
 -- @usage if iv1 == iv2 then ...
 function Interval:__eq(b)
-  if type(self) == number then 
-    return self == b.low and self == b.value and self == b.high
-  elseif type(b) == number then
-    return self.low == b and self.value == b and self.high == b
-  else
-    return self.low == b.low and self.value == b.value and self.high == b.high
-  end
+  return self.low == b.low and self.value == b.value and self.high == b.high
 end
 
 -------------------------------------
@@ -326,13 +326,7 @@ end
 -- @usage if iv1 < iv2 then ...
 --if iv1 > iv2 then ...
 function Interval:__lt(b)
-  if type(self) == 'number' then
-    return self < b.low
-  elseif type(b) == 'number' then
-    return self.high < b
-  else
-    return self.high < b.low
-  end
+  return self.high < b.low
 end
 
 -------------------------------------
@@ -341,25 +335,18 @@ end
 -- Take two intervals A = [a1,a2] and B = [b1,b2]. A is said to be less or equal B if
 -- A <= B : a1 <= b1 and a2 <= b2
 -- To say explicit: A <= B is totally different from (A < B or A == B) !
--- @param b: #Interval to be compared
+-- @param b  #Interval to be compared
 -- @return true if self <= b
 -- @usage if iv1 <= iv2 then ...
 --if iv1 >= iv2 then ...
 function Interval:__le(b)
-  if type(self) == 'number' then
-    return self <= b.low
-  elseif type(b) == 'number' then
-    return self.high <= b
-  else
-    return self.low <= b.low and self.high <= b.high
-  end
+  return self.low <= b.low and self.high <= b.high
 end
 
 -------------------------------------
 -- Check inclusion.
--- Checks if a value or an interval is included in self
--- @param self: #Interval
--- @param b: #Interval or number to be checked
+-- Checks if a value or an interval is fully included in self
+-- @param b  #Interval or number to be checked
 -- @return true if all values of b are member of self
 -- @usage if iv1:includes(iv2) then ...
 -- if iv1:includes(3.1) then ...
@@ -374,26 +361,28 @@ end
 -------------------------------------
 -- Compare intervals.
 -- Compares the relation between self (a) and another interval/value (b)
--- @param self #Interval a
--- @param b: #Interval or b #number to be checked
+-- @param b #Interval or b #number to be checked
 -- @return #string i, #string v
 -- first string reflects the relation of the intervals:
--- * '<' if a is less than b
--- * '==' if intervals are equal
--- * 'a[b]' if b is fully included in a
--- * 'b[a]' if a is included in b
--- * '<=' if a and b have common elements and a.low <= b.low
--- * '=>' if a and b have common elements and a.high >= b.high
--- * '>' if a is greater than b
--- * '?' in any other case (would be an implementation fault)
+-- <ul>
+-- <li>'<' if a is less than b</li>
+-- <li>'==' if intervals are equal</li>
+-- <li>'a[b]' if b is fully included in a</li>
+-- <li>'b[a]' if a is included in b</li>
+-- <li>'<=' if a and b have common elements and a.low <= b.low</li>
+-- <li>'=>' if a and b have common elements and a.high >= b.high</li>
+-- <li>'>' if a is greater than b</li>
+-- <li>'?' in any other case (would be an implementation fault)</li>
+-- </ul>
 -- The second string reflects the relation of the values:
--- * '<' a.value < b.value
--- * '==' if a.value == b.value
--- * '>' a.value > b.value
--- 
+-- <ul>
+-- <li>'<' a.value < b.value</li>
+-- <li>'==' if a.value == b.value</li>
+-- <li>'>' a.value > b.value</li>
+-- </ul>
 function Interval:compare(b)
-  if type(b) == number then
-    b = Interval:new{v=b}
+  if type(b) == 'number' then
+    b = Interval:new(b) --newbee, haha
   end
   if self == b then 
     return '==', '==' 
@@ -417,8 +406,12 @@ function Interval:compare(b)
     ires = 'b[a]'
   elseif b.low >= self.low and b.high <= self.high then
     ires = 'a[b]'
+  elseif self.high <= b.high then
+    ires = '<='
   elseif self.low > b.high then
     ires = '>'
+  elseif self.low >= b.low then
+    ires = '>='
   end
   return ires, vres 
 end
@@ -431,7 +424,7 @@ end
 -- @return String representation of the Interval
 -- @usage a = Interval:new{l=9,v=10,h=10.4}
 -- tostring(a)
---   returns '10 [9,10.4]'
+--   returns '10 [9; 10.4]'
 function Interval:__tostring()
   return self:format()
 end
@@ -444,27 +437,25 @@ end
 -- In the format string can be the following tokens that
 -- are substituted by the fields of the Interval:
 -- <ul>
--- <li> '#v'  substituted by self.value </li>
--- <li> '#l'  substituted by self.low</li>
--- <li> '#h'  substituted by self.high</li>
+-- <li> '#m'  Middle, substituted by self.value </li>
+-- <li> '#l'  Low, substituted by self.low</li>
+-- <li> '#h'  High, substituted by self.high</li>
 -- </ul>
 -- all tokens will be replaced by a '%' character so that
 -- the following characters define the format string for 
 -- the string.format() function.
--- So the format string '#v5.1f [#l5.1f,#h5.1f]' will do the same like
+-- So the format string '#m5.1f [#l5.1f,#h5.1f]' will do the same like
 -- string.format('%5.1f [%5.1f,%5.1f]', iv.value, iv.low, iv.high)
 -- @return String according to given format.
 -- @usage a = Interval:new{l=1.5,v=2,h=2.5}
--- a:format('Result: #v5.1f [#lf,#hf]')
+-- a:format('Result: #m5.1f [#lf,#hf]')
 --   gives 'Result:   2.0 [1.5,2.5]'
 function Interval:format(f)
-  f = f or "#vg [#lg, #hg]"
-  symbol = symbol or self.symbol
-  local ustring = symbol
+  f = f or "#mg [#lg; #hg]"
   local value = self.value
   local str
 
-  str = string.gsub(f,"#v","%%")
+  str = string.gsub(f,"#m","%%")
   str = string.format(str,self.value)
   str = string.gsub(str,"#l","%%")
   str = string.format(str,self.low)
@@ -476,66 +467,15 @@ end
 -------------------------------------
 -- Generate JSon string. 
 -- Converts the Interval to a Json string.
+-- Be aware that the output might depend on the i18n of your lua interpreter,
+-- e.g. if you are using JNLua, that is delivered with the Eclipse Lua Development Tools.
+-- This is not taken into account here! You must change the toJson() implementations if
+-- you run in such a problem.
 -- @return A Json string.
--- @usage Interval.mElectron:toJson('kg')
--- will return e.g. '{ "type": "Interval", "value": 9.10939e-31, "low": 9.109387e-31, "high": 9.109393e-31}'
+-- @usage Interval:new({v=10,d=0.5}):toJSon()
+-- will return e.g. '{ "type": "Interval", "value": 10, "low": 9.5, "high": 10.5}'
 function Interval:toJson()
-  return self:format('{ "type": "Interval", "value": #v.13g, "low": #v.13g, "high": #v.13g}')
+  return self:format('{ "type": "Interval", "value": #m.13g, "low": #l.13g, "high": #h.13g}')
 end
-
---[[
-function test_div(iv)
-  local a = iv:new({l=9.5,v=10,h=10.3})
-  local b = iv:new({l=-9.5,v=10,h=10.3})
-  local d = iv:new{l=-11, v=-10, h =-9}
-  
-  local c
-  -- Simple case: both positive
-  c = a/a
--- assertEquals(c.value, 1)
--- assertAlmostEquals(c.low,a.low/a.high,1e-12)
--- assertAlmostEquals(c.high,a.high/a.low,1e-12)
-  
-  -- All values of one operand negative
-  c = a/d
--- assertEquals(c.value, -1)
--- assertAlmostEquals(c.low,a.high/d.high,1e-12)
--- assertAlmostEquals(c.high,a.low/d.low,1e-12)
-    
-  c = d/a
--- assertEquals(c.value, -1)
--- assertAlmostEquals(c.low,d.low/a.low,1e-12)
--- assertAlmostEquals(c.high,d.high/a.high,1e-12)
- 
-  -- Dividend One limit negative  
-  c = b/a
--- assertEquals(c.value, 1)
--- assertEquals(c.low,b.low/a.low)
--- assertEquals(c.high,b.high/a.low)
-  
-  -- Divisor One limit negative  / now 0 is in the interval
-  -- this gives result interval from minus infinity to plus infinity
-  c = a/b
--- assertEquals(c.value, 1)
--- assertEquals(c.low,- math.huge)
--- assertEquals(c.high, math.huge)
-
-  -- Dividend is a number / Divisor all positive
-  c = 2/b 
--- assertEquals(c.value, 5)
--- assertEquals(c.low, - math.huge)
--- assertEquals(c.high, math.huge)
-  
-
-  -- Dividend is a number / Divisor contains Zero.
-  c = 2/b 
--- assertEquals(c.value, 5)
--- assertEquals(c.low, - math.huge)
--- assertEquals(c.high, math.huge)
-  
-end
- 
-test_div(Interval)
---]]
 
 return Interval

@@ -1,0 +1,786 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>ldoc</h1>
+
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Class_Interval">Class Interval </a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="$(kind=='Topics' and '' or 'nowrap'">
+  <li><strong>invervals</strong></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>invervals</code></h1>
+<p>Provides a class for interval arithmetics.</p>
+<p></p>
+
+
+<h2><a href="#Class_Interval">Class Interval </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Interval:initialize">Interval:initialize (value)</a></td>
+	<td class="summary">Constructor: called in Interval.new().</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:normalize">Interval:normalize ()</a></td>
+	<td class="summary">normalizes the values so that
+ low <= value <= high.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval.deep_copy">Interval.deep_copy (a)</a></td>
+	<td class="summary">Helper function: deep copies a interval
+ object.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__add">Interval:__add (b)</a></td>
+	<td class="summary">Add b to self.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__sub">Interval:__sub (b)</a></td>
+	<td class="summary">Substract b from self.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__unm">Interval:__unm ()</a></td>
+	<td class="summary">Unary minus of self.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__mul">Interval:__mul (b)</a></td>
+	<td class="summary">Multiply self by b.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__div">Interval:__div (b)</a></td>
+	<td class="summary">Divide by b</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__pow">Interval:__pow (b)</a></td>
+	<td class="summary">Power(b)</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:sqrt">Interval:sqrt ()</a></td>
+	<td class="summary">Square root</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:cbrt">Interval:cbrt ()</a></td>
+	<td class="summary">Cubic root</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:log10">Interval:log10 (self:)</a></td>
+	<td class="summary">Decimal logarithmus (base 10).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:log">Interval:log (self:)</a></td>
+	<td class="summary">Natural logarithmus (base e).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__eq">Interval:__eq (b)</a></td>
+	<td class="summary">Compare Equal self '==' b.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__lt">Interval:__lt (b)</a></td>
+	<td class="summary">Compare less than self '<' b.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__le">Interval:__le (b)</a></td>
+	<td class="summary">Compare Less equal(b) '<='.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:includes">Interval:includes (b)</a></td>
+	<td class="summary">Check inclusion.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:compare">Interval:compare (b)</a></td>
+	<td class="summary">Compare intervals.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:__tostring">Interval:__tostring ()</a></td>
+	<td class="summary">String conversion.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:format">Interval:format (f)</a></td>
+	<td class="summary">String format.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Interval:toJson">Interval:toJson ()</a></td>
+	<td class="summary">Generate JSon string.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header has-description"><a name="Class_Interval"></a>Class Interval </h2>
+
+          <div class="section-description">
+          Holds the class structure of the module.
+
+          </div>
+    <dl class="function">
+    <dt>
+    <a name = "Interval:initialize"></a>
+    <strong>Interval:initialize (value)</strong>
+    </dt>
+    <dd>
+    Constructor: called in Interval.new().
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+          table defining the interval or a number
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"> iv = Interval:new(<span class="number">10</span>) <span class="comment">-- low = high = value = 10
+</span> iv = Interval:new({v=<span class="number">10</span>}) <span class="comment">-- low = high = value = 10
+</span> iv = Interval:new(iv2) <span class="comment">-- initialize with the interval iv2
+</span> iv = Interval:new({l=<span class="number">9</span>,v=<span class="number">10</span>,h=<span class="number">11</span>}) <span class="comment">-- low=9, value=10, high=11
+</span> iv = Interval:new({v=<span class="number">10</span>,d=<span class="number">0.5</span>}) -- low=<span class="number">9.5</span>, value=<span class="number">10</span>, high=<span class="number">10.5</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:normalize"></a>
+    <strong>Interval:normalize ()</strong>
+    </dt>
+    <dd>
+    normalizes the values so that
+ low <= value <= high.
+
+ If the value value is not within the [low; high] range
+ the range will be adapted to the value value.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Normalized number
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Interval.deep_copy"></a>
+    <strong>Interval.deep_copy (a)</strong>
+    </dt>
+    <dd>
+    Helper function: deep copies a interval
+ object.
+ The function avoids deep copy of the members
+ metatable and class
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">a</span>
+         Interval to be copied
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Interval:__add"></a>
+    <strong>Interval:__add (b)</strong>
+    </dt>
+    <dd>
+    Add b to self.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         Interval ( or number) to be added
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval Sum of self and b.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = iv2 + iv3</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__sub"></a>
+    <strong>Interval:__sub (b)</strong>
+    </dt>
+    <dd>
+    Substract b from self.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         Interval to be subtracted
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval Difference of self and b.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = iv2 - iv3</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__unm"></a>
+    <strong>Interval:__unm ()</strong>
+    </dt>
+    <dd>
+    Unary minus of self.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval Negative value of self.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = -iv2</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__mul"></a>
+    <strong>Interval:__mul (b)</strong>
+    </dt>
+    <dd>
+    Multiply self by b.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         Multiplicator (can be Interval or number)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval self * b
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = iv2 * iv3
+iv1 = iv2 * number3</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__div"></a>
+    <strong>Interval:__div (b)</strong>
+    </dt>
+    <dd>
+    Divide by b
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         Divisor (can be #Interval or #number)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval self / b
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = iv2 / iv3
+iv1 = iv2 / number3</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__pow"></a>
+    <strong>Interval:__pow (b)</strong>
+    </dt>
+    <dd>
+    Power(b)
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         Exponent (a #number)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval self ^ b
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"> iv1 = iv2 ^ <span class="number">2</span>
+ iv1 = <span class="number">2</span> ^ iv2
+ iv1 = iv2 ^ iv3</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:sqrt"></a>
+    <strong>Interval:sqrt ()</strong>
+    </dt>
+    <dd>
+    Square root
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval self ^ (1/2)
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = iv2:sqrt()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:cbrt"></a>
+    <strong>Interval:cbrt ()</strong>
+    </dt>
+    <dd>
+    Cubic root
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval self ^ (1/3)
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = iv2:cbrt()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:log10"></a>
+    <strong>Interval:log10 (self:)</strong>
+    </dt>
+    <dd>
+    Decimal logarithmus (base 10).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">self:</span>
+         The argument of log10 function
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval: decimal logarithmus of a
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = Interval.log10(a)
+ iv1 = iv2:log10()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:log"></a>
+    <strong>Interval:log (self:)</strong>
+    </dt>
+    <dd>
+    Natural logarithmus (base e).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">self:</span>
+         The argument of log function
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        #Interval: decimal logarithmus of a
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">iv1 = Interval.log(a)
+ iv1 = iv2:log()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__eq"></a>
+    <strong>Interval:__eq (b)</strong>
+    </dt>
+    <dd>
+    Compare Equal self '==' b.
+ Intervals are equal if low, high and value of both operands match.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         #Interval to be compared
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        true if self == b
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">if</span> iv1 == iv2 <span class="keyword">then</span> ...</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__lt"></a>
+    <strong>Interval:__lt (b)</strong>
+    </dt>
+    <dd>
+    Compare less than self '<' b.
+ Intervals iv1 is assumed to be less than interval iv2 only if the two
+ intervals have no intersection, i.e. iv1.high < iv2.low
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         #Interval to be compared
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        true if self < b
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">if</span> iv1 &lt; iv2 <span class="keyword">then</span> ...
+<span class="keyword">if</span> iv1 &gt; iv2 <span class="keyword">then</span> ...</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:__le"></a>
+    <strong>Interval:__le (b)</strong>
+    </dt>
+    <dd>
+    Compare Less equal(b) '<='.
+ The definition of 'less or equal' follows the definition provided by Bohlender, Kulisch and Lohner 2008.
+ Take two intervals A = [a1,a2] and B = [b1,b2]. A is said to be less or equal B if
+ A <= B : a1 <= b1 and a2 <= b2
+ To say explicit: A <= B is totally different from (A < B or A == B) !
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+          #Interval to be compared
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        true if self <= b
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">if</span> iv1 &lt;= iv2 <span class="keyword">then</span> ...
+<span class="keyword">if</span> iv1 &gt;= iv2 <span class="keyword">then</span> ...</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:includes"></a>
+    <strong>Interval:includes (b)</strong>
+    </dt>
+    <dd>
+    Check inclusion.
+ Checks if a value or an interval is fully included in self
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+          #Interval or number to be checked
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        true if all values of b are member of self
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">if</span> iv1:includes(iv2) <span class="keyword">then</span> ...
+ <span class="keyword">if</span> iv1:includes(<span class="number">3.1</span>) <span class="keyword">then</span> ...</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:compare"></a>
+    <strong>Interval:compare (b)</strong>
+    </dt>
+    <dd>
+    Compare intervals.
+ Compares the relation between self (a) and another interval/value (b)
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">b</span>
+         #Interval or b #number to be checked
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+         #string i, #string v
+ first string reflects the relation of the intervals:
+ <ul>
+ <li>'<' if a is less than b</li>
+ <li>'==' if intervals are equal</li>
+ <li>'a[b]' if b is fully included in a</li>
+ <li>'b[a]' if a is included in b</li>
+ <li>'<=' if a and b have common elements and a.low <= b.low</li>
+ <li>'=>' if a and b have common elements and a.high >= b.high</li>
+ <li>'>' if a is greater than b</li>
+ <li>'?' in any other case (would be an implementation fault)</li>
+ </ul>
+ The second string reflects the relation of the values:
+ <ul>
+ <li>'<' a.value < b.value</li>
+ <li>'==' if a.value == b.value</li>
+ <li>'>' a.value > b.value</li>
+ </ul>
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Interval:__tostring"></a>
+    <strong>Interval:__tostring ()</strong>
+    </dt>
+    <dd>
+    String conversion.
+ Converts the Interval to a string
+ This function calls Interval:format
+ with the standard format.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        String representation of the Interval
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"> a = Interval:new{l=<span class="number">9</span>,v=<span class="number">10</span>,h=<span class="number">10.4</span>}
+ <span class="global">tostring</span>(a)
+   returns <span class="string">'10 [9; 10.4]'</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:format"></a>
+    <strong>Interval:format (f)</strong>
+    </dt>
+    <dd>
+    String format.
+ Formats the Interval to a string with a given format
+ and unit.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">f</span>
+         Format string.
+ In the format string can be the following tokens that
+ are substituted by the fields of the Interval:
+ <ul>
+ <li> '#m'  Middle, substituted by self.value </li>
+ <li> '#l'  Low, substituted by self.low</li>
+ <li> '#h'  High, substituted by self.high</li>
+ </ul>
+ all tokens will be replaced by a '%' character so that
+ the following characters define the format string for
+ the string.format() function.
+ So the format string '#m5.1f [#l5.1f,#h5.1f]' will do the same like
+ string.format('%5.1f [%5.1f,%5.1f]', iv.value, iv.low, iv.high)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        String according to given format.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"> a = Interval:new{l=<span class="number">1.5</span>,v=<span class="number">2</span>,h=<span class="number">2.5</span>}
+ a:format(<span class="string">'Result: #m5.1f [#lf,#hf]'</span>)
+   gives <span class="string">'Result:   2.0 [1.5,2.5]'</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "Interval:toJson"></a>
+    <strong>Interval:toJson ()</strong>
+    </dt>
+    <dd>
+    Generate JSon string.
+ Converts the Interval to a Json string.
+ Be aware that the output might depend on the i18n of your lua interpreter,
+ e.g. if you are using JNLua, that is delivered with the Eclipse Lua Development Tools.
+ This is not taken into account here! You must change the toJson() implementations if
+ you run in such a problem.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        A Json string.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">Interval:new({v=<span class="number">10</span>,d=<span class="number">0.5</span>}):toJSon()
+ will <span class="keyword">return</span> e.g. <span class="string">'{ "type": "Interval", "value": 10, "low": 9.5, "high": 10.5}'</span></pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.3</a></i>
+<i style="float:right;">Last updated 2016-02-21 19:09:09 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
