@@ -498,14 +498,24 @@ function TestIntervals:test_pow()
   assertEquals(c.high, a.high ^ b.high)
   
 end
+
  
 function TestIntervals:test_log()
   local a = iv:new({l=2, v=3, h=4})
   local b = iv.log(a)
-  
+
   assertEquals(b.value, math.log(a.value))
   assertEquals(b.low, math.log(a.low))
   assertEquals(b.high, math.log(a.high))
+
+  a = iv:new({l=0, v=3, h=4})
+  local function _log(a) return a:log(); end
+  local ok, res
+  -- log of negative number or zero is not supported.
+  ok, res = pcall(_log, a)
+  assertFalse(ok)
+  assertStrContains(res,'All interval members must be positive')
+
 end
   
 function TestIntervals:test_log10()
@@ -515,6 +525,15 @@ function TestIntervals:test_log10()
   assertEquals(b.value, math.log10(a.value))
   assertEquals(b.low, math.log10(a.low))
   assertEquals(b.high, math.log10(a.high))
+
+  a = iv:new({l=0, v=3, h=4})
+  local function _log10(a) return a:log(); end
+  local ok, res
+  -- log of negative number or zero is not supported.
+  ok, res = pcall(_log10, a)
+  assertFalse(ok)
+  assertStrContains(res,'All interval members must be positive')
+
 end
   
 function TestIntervals:test_eq()
@@ -654,8 +673,14 @@ end
 
 function TestIntervals:test_tostring()
   local a = iv:new{v=10.1, d=0.5}
+  local b = iv:new{v=20.2}
+
   local str = tostring(a):gsub(',','.') -- (adapt for all i18n modes)
   assertEquals(str, '10.1 [9.6; 10.6]')
+
+  local str = tostring(b):gsub(',','.') -- (adapt for all i18n modes)
+  assertEquals(str, '20.2 [20.2; 20.2]')
+  
 end
 
 
@@ -670,10 +695,15 @@ end
 
 function TestIntervals:test_toJson()
   local a = iv:new{v=10.1, d=0.5}
-  assertEquals(a:toJson(), '{ "type": "Interval", "value": 10.1, "low": 9.6, "high": 10.6}')
+  assertEquals(a:toJson(), '{"type": "Interval", "value": 10.1 , "low": 9.6 , "high": 10.6 }')
+  
+  -- A fraction should be displayed with full precision of 13 decimal digits
+  local b = iv:new{v=100/3}
+  assertEquals(b:toJson(), '{"type": "Interval", "value": 33.33333333333 , "low": 33.33333333333 , "high": 33.33333333333 }')
+  
 end
 
-
+print(math.log(-3))
 lu = LuaUnit.new()
 lu:setOutputType("tap")
 os.exit( lu:runSuite() )

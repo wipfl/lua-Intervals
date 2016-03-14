@@ -294,6 +294,7 @@ end
 -- @usage iv1 = Interval.log10(a)
 -- iv1 = iv2:log10()
 function Interval:log10()
+  assert(self.low > 0, "All interval members must be positive: " .. tostring(self))
   return Interval:new{l=math.log10(self.low), v=math.log10(self.value), h=math.log10(self.high)}
 end
 
@@ -304,6 +305,7 @@ end
 -- @usage iv1 = Interval.log(a)
 -- iv1 = iv2:log()
 function Interval:log()
+  assert(self.low > 0, "All interval members must be positive: " .. tostring(self))
   return Interval:new{l=math.log(self.low), v=math.log(self.value), h=math.log(self.high)}
 end
 
@@ -467,15 +469,15 @@ end
 -------------------------------------
 -- Generate JSon string. 
 -- Converts the Interval to a Json string.
--- Be aware that the output might depend on the i18n of your lua interpreter,
--- e.g. if you are using JNLua, that is delivered with the Eclipse Lua Development Tools.
--- This is not taken into account here! You must change the toJson() implementations if
--- you run in such a problem.
+-- The point '.' is always used for decimals in numbers.
 -- @return A Json string.
 -- @usage Interval:new({v=10,d=0.5}):toJSon()
--- will return e.g. '{ "type": "Interval", "value": 10, "low": 9.5, "high": 10.5}'
+-- will return e.g. '{ "type": "Interval", "value": 10 , "low": 9.5 , "high": 10.5 }'
 function Interval:toJson()
-  return self:format('{ "type": "Interval", "value": #m.13g, "low": #l.13g, "high": #h.13g}')
+  return '{"type": "Interval", "value": ' .. self:format('#m.13g'):gsub(',','.')
+          .. ' , "low": ' .. self:format('#l.13g'):gsub(',','.')
+          .. ' , "high": ' .. self:format('#h.13g'):gsub(',','.')
+          .. ' }'
 end
 
 return Interval
